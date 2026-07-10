@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
+const externalServer = process.env.PLAYWRIGHT_EXTERNAL_SERVER === '1';
 
 export default defineConfig({
   testDir: './tests',
@@ -9,15 +11,15 @@ export default defineConfig({
   fullyParallel: false,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL,
     serviceWorkers: 'block',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     launchOptions: { ...(executablePath ? { executablePath } : {}), args: process.env.CI ? ['--no-sandbox'] : [] }
   },
-  webServer: {
+  webServer: externalServer ? undefined : {
     command: 'npm run preview -- --host 127.0.0.1 --port 4173',
-    url: 'http://127.0.0.1:4173',
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000
   },

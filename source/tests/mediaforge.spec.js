@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 async function enterApp(page) {
+  await page.route('https://www.gstatic.com/**', route => route.abort());
   await page.goto('./');
   await expect(page.locator('.app-shell')).toBeVisible();
   const legal = page.locator('#acceptLegalBtn');
@@ -96,8 +97,8 @@ test('inspector calcula metadatos y huella SHA-256', async ({ page }) => {
 
 
 
-test('convertidor FFmpeg local genera un MP3 descargable', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name.includes('mobile'), 'La conversión WASM se prueba una sola vez en escritorio');
+test('convertidor FFmpeg bajo demanda genera un MP3 descargable', async ({ page }, testInfo) => {
+  test.skip(process.env.MEDIAFORGE_TEST_FFMPEG !== '1' || testInfo.project.name.includes('mobile'), 'Activa MEDIAFORGE_TEST_FFMPEG=1 para probar la descarga externa del núcleo WASM');
   await enterApp(page);
   await goToView(page, 'converter');
   await page.locator('#converterInput').setInputFiles('tests/fixtures/tone.wav');
@@ -109,8 +110,8 @@ test('convertidor FFmpeg local genera un MP3 descargable', async ({ page }, test
   await expect(page.locator('#progressPercent')).toHaveText('100%', { timeout: 60_000 });
 });
 
-test('FFmpeg local analiza y valida un archivo real', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name.includes('mobile'), 'Se ejecuta una sola vez para evitar duplicar la carga del núcleo WASM');
+test('FFmpeg bajo demanda analiza y valida un archivo real', async ({ page }, testInfo) => {
+  test.skip(process.env.MEDIAFORGE_TEST_FFMPEG !== '1' || testInfo.project.name.includes('mobile'), 'Activa MEDIAFORGE_TEST_FFMPEG=1 para probar la descarga externa del núcleo WASM');
   await enterApp(page);
   await goToView(page, 'inspector');
   await page.locator('#inspectorInput').setInputFiles('tests/fixtures/tone.wav');
@@ -126,11 +127,23 @@ test('FFmpeg local analiza y valida un archivo real', async ({ page }, testInfo)
   await expect(page.locator('#validationOutput')).toContainText('COPIA REPARADA', { timeout: 60_000 });
 });
 
-test('los recursos PWA y FFmpeg están alojados en el propio proyecto', async ({ request }) => {
-  for (const path of ['./manifest.webmanifest', './sw.js', './vendor/ffmpeg/ffmpeg-core.js', './vendor/ffmpeg/ffmpeg-core.wasm']) {
+test('los recursos PWA y Cast Bridge están incluidos en el proyecto ligero', async ({ request }) => {
+  for (const path of ['./manifest.webmanifest', './sw.js', './cast-bridge/MediaForgeCastBridge.py', './cast-bridge/START_CAST_BRIDGE.bat', './cast-bridge/README.html']) {
     const response = await request.get(path);
     expect(response.ok(), path).toBeTruthy();
   }
+});
+
+test('el panel de transmisión explica Cast, AirPlay y el Bridge sin botones decorativos', async ({ page }) => {
+  await enterApp(page);
+  await expect(page.locator('#castBtn')).toBeVisible();
+  await page.locator('#castBtn').click();
+  await expect(page.locator('#modalTitle')).toHaveText('Transmitir a una pantalla');
+  await expect(page.locator('.cast-modal-body')).toContainText('Google Cast');
+  await expect(page.locator('.cast-modal-body')).toContainText('MediaForge Cast Bridge');
+  await page.locator('#castBridgeGuideBtn').click();
+  await expect(page.locator('#modalTitle')).toHaveText('MediaForge Cast Bridge');
+  await expect(page.locator('a[href="./cast-bridge/MediaForgeCastBridge.py"]')).toBeVisible();
 });
 
 test('la vista móvil no produce desbordamiento horizontal', async ({ page }, testInfo) => {

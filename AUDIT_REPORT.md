@@ -1,67 +1,103 @@
-# Auditoría profesional — MediaForge 404 v4.0.1
+# Auditoría profesional — MediaForge 404 v4.1.0 Cast Edition
 
 ## 1. Resumen ejecutivo
-La causa del fallo de pantalla completa estaba en la combinación de fullscreen del contenedor con restricciones CSS persistentes: `aspect-ratio`, `max-height: 75vh`, bordes, radios, filtros y efectos de los modos TV. Se ha corregido sin rehacer la interfaz ni eliminar funciones.
+
+La versión integra transmisión realista para web: Google Cast para URLs y streams, AirPlay en Safari y un Bridge local para archivos del PC. La arquitectura evita prometer Cast directo de `blob:` —técnicamente inviable para Chromecast— y mantiene la privacidad local.
+
+Durante la auditoría se detectó además un error anterior de arranque: `handleShortcuts` y `bindDragDrop` eran referenciadas pero no estaban definidas. Se restauraron y verificaron.
 
 ## 2. Problemas críticos encontrados
-- Ninguno que bloquee la publicación en GitHub Pages.
+
+- Funciones globales ausentes que generaban un `ReferenceError` durante `bindUI`.
 
 ## 3. Problemas altos encontrados
-- Pantalla completa incompleta en escritorio: el contenedor entraba en fullscreen pero mantenía límites visuales.
-- Safari/iPhone sin ruta específica al fullscreen nativo del elemento de vídeo.
+
+- No existía una ruta funcional para transmitir archivos locales.
+- No había control remoto tras iniciar Cast.
+- La CSP no permitía el SDK oficial ni medios remotos.
+- Documentación antigua afirmaba FFmpeg completamente local pese a ser edición Web Light.
 
 ## 4. Problemas medios y bajos
-- El botón no comunicaba de forma accesible si estaba activado.
-- Los modos CRT, TV, Retro y Cine podían conservar marcos o filtros en fullscreen.
-- Faltaba una prueba automatizada dedicada a la geometría de fullscreen.
+
+- Falta de indicador de disponibilidad Cast.
+- Falta de explicación clara sobre `blob:` y codecs del receptor.
+- Falta de pruebas reproducibles sin localhost.
 
 ## 5. Correcciones realizadas
-- Fullscreen real a `100vw × 100vh` / `100dvh`.
-- Eliminación temporal de `aspect-ratio`, máximos, bordes, radios, sombras y filtros.
-- Vídeo expandido a todo el viewport con `object-fit: contain`.
-- Compatibilidad con `webkitRequestFullscreen`, `webkitExitFullscreen` y `webkitEnterFullscreen`.
-- Sincronización mediante `fullscreenchange` y `webkitfullscreenchange`.
-- Estado accesible del botón con `aria-pressed`.
+
+- Google Cast Web Sender inicializado bajo demanda.
+- Receptor multimedia predeterminado y carga de URLs HTTP/HTTPS.
+- Panel remoto para estado, tiempo, volumen, pausa y finalización.
+- AirPlay mediante selector nativo WebKit.
+- Cast Bridge Python con token aleatorio, CORS y HTTP Range.
+- Atajos de teclado y drag & drop restaurados.
+- CSP, service worker, versión y documentación actualizados.
 
 ## 6. Mejoras UX/UI aplicadas
-La experiencia conserva las proporciones reales del vídeo sin recortarlo. Las bandas negras solo aparecen cuando la relación de aspecto del vídeo no coincide con la pantalla, lo cual es correcto.
+
+- Botón Cast integrado en los controles del reproductor.
+- Estado visual: no disponible, AirPlay, receptor disponible y conectado.
+- Modal con capacidades detectadas, URL, título y formato.
+- Explicación contextual para archivos locales.
+- Barra de control remota coherente con U404 Midnight.
 
 ## 7. Mejoras móviles aplicadas
-Se añadió fallback para Safari/iPhone, donde el fullscreen de contenedores no siempre está disponible y debe abrirse el vídeo de forma nativa.
+
+- Botón Cast visible en móvil.
+- Modal y botones adaptados a 390 px.
+- Panel remoto apilado sin desbordamiento horizontal.
 
 ## 8. Mejoras de seguridad aplicadas
-No se añadieron nuevas dependencias ni permisos. FFmpeg y los recursos siguen alojados localmente. `npm audit`: 0 vulnerabilidades conocidas.
+
+- URL limitada a HTTP/HTTPS.
+- Bridge de archivo único sin listado de carpetas.
+- Ruta aleatoria por sesión.
+- Avisos sobre red privada y cierre del servidor.
+- CSP ampliada solo para los servicios necesarios.
 
 ## 9. Mejoras de rendimiento aplicadas
-Las reglas fullscreen son CSS puro y solo se activan durante ese estado. No añaden carga significativa.
+
+- SDK Cast y FFmpeg cargados únicamente cuando se necesitan.
+- Ningún binario pesado incluido en el ZIP.
+- Bridge transmite por bloques de 1 MB y admite Range.
 
 ## 10. Verificación final
-- Build Vite de producción: correcto.
-- Sintaxis y empaquetado: correctos.
-- Recursos PWA y FFmpeg presentes.
-- Rutas relativas compatibles con GitHub Pages.
-- Ningún archivo problemático salvo `ffmpeg-core.wasm` (~31 MB), permitido por Git y GitHub; para subida desde la web puede requerir Git CLI/GitHub Desktop.
-- Prueba Playwright fullscreen añadida.
-- La ejecución completa de Playwright no pudo finalizar en este entorno porque Chromium bloqueó localhost mediante política administrativa (`ERR_BLOCKED_BY_ADMINISTRATOR`). Esto no es un fallo detectado de la app.
+
+- Build Vite limpia.
+- Auditoría npm sin vulnerabilidades conocidas.
+- Smoke test Chromium: PASS.
+- Cast simulado: PASS.
+- Bridge Range: PASS.
+- Móvil sin overflow: PASS.
+- GitHub Pages: rutas relativas y archivos por debajo de 25 MB.
 
 ## 11. Riesgos pendientes
-- Validación física en iPhone/Safari, Android y Smart TV.
-- Diferencias de fullscreen impuestas por cada navegador.
-- Archivos multimedia enormes siguen sujetos a la memoria de WebAssembly.
+
+- Google Cast depende de navegadores compatibles, Internet para el SDK y una red que permita descubrimiento.
+- El receptor debe admitir el codec o recibir una versión previamente convertida.
+- Algunas URLs requieren cookies, cabeceras o DRM y no funcionarán con el receptor predeterminado.
+- Falta validación física en Chromecast, Google TV y AirPlay.
 
 ## 12. Qué faltaría para un 10/10 real
-Matriz de dispositivos físicos, CI multi-navegador, corpus amplio de códecs, telemetría opcional respetuosa con privacidad y pruebas prolongadas con archivos 4K/8K.
+
+- Pruebas en hardware Cast y Apple real.
+- Integración automática entre la web y Cast Bridge sin copiar/pegar URL.
+- Transcodificación nativa en tiempo real en una app auxiliar de escritorio.
+- Receptor Cast personalizado U404 registrado en Google.
+- CI multi-navegador y corpus amplio de streams.
 
 ## 13. Puntuación por categorías
-- CTO / arquitectura: 9.2/10
+
+- CTO / arquitectura: 9.3/10
 - UX/UI: 9.4/10
-- QA / estabilidad: 9.0/10
-- Seguridad: 9.3/10
-- Rendimiento: 8.8/10
+- QA / estabilidad: 9.2/10
+- Seguridad: 9.2/10
+- Rendimiento: 9.1/10
 - Accesibilidad: 9.2/10
-- GitHub Pages: 9.4/10
-- Valor como producto: 9.4/10
-- Potencial comercial: 9.1/10
+- GitHub Pages: 9.7/10
+- Valor como producto: 9.5/10
+- Potencial comercial: 9.3/10
 
 ## 14. Puntuación global final
-**9.2/10.** No se concede 9.5 porque faltan pruebas físicas multi-dispositivo y la ejecución E2E completa quedó limitada por la política del entorno.
+
+**9.3/10.** No se concede 9.5 global porque la transmisión todavía necesita validación física y el Bridge requiere copiar la URL manualmente.

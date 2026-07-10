@@ -34,20 +34,7 @@ await addDirectory('assets');
 await addDirectory('icons');
 // FFmpeg Core (32 MB) se almacena bajo demanda desde Ajustes para no bloquear la instalación PWA.
 
-// @ffmpeg/ffmpeg incluye una URL CDN como fallback interno. MediaForge siempre
-// proporciona coreURL/wasmURL locales, pero también sustituimos ese fallback en
-// el worker generado para que el artefacto de producción sea autosuficiente.
-const assetEntries = await readdir(resolve(dist, 'assets'), { withFileTypes: true });
-for (const entry of assetEntries) {
-  if (!entry.isFile() || !/^worker-.*\.js$/.test(entry.name)) continue;
-  const workerPath = resolve(dist, 'assets', entry.name);
-  let worker = await readFile(workerPath, 'utf8');
-  worker = worker.replaceAll(
-    'https://unpkg.com/@ffmpeg/core@0.12.9/dist/umd/ffmpeg-core.js',
-    '../vendor/ffmpeg/ffmpeg-core.js'
-  );
-  await writeFile(workerPath, worker);
-}
+// Edición Web Light: el worker conserva su fallback CDN y MediaForge proporciona URLs explícitas al cargar FFmpeg.
 
 const swPath = resolve(dist, 'sw.js');
 let sw = await readFile(swPath, 'utf8');

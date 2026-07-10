@@ -1,113 +1,87 @@
-# MediaForge 404 v4.0.0
+# MediaForge 404 v4.1.0 Cast Edition
 
-**Suite multimedia privada y local** para reproducir, organizar, inspeccionar, validar, reparar y convertir audio y vídeo desde el navegador. Incluye U404 Universal Media Engine, biblioteca inteligente, Audio Lab, FFmpeg WebAssembly local, 24 skins y 9 modos de pantalla.
+**Reproductor multimedia privado y local** con biblioteca, Audio Lab, conversión, inspector técnico, skins U404, modos de televisión y transmisión a pantallas.
 
-> Los archivos permanecen en el dispositivo. MediaForge 404 no utiliza cuentas, analítica, telemetría ni servidores de procesamiento.
+> Tus archivos permanecen en tu dispositivo. Reproduce, inspecciona, convierte y transmite contenido multimedia directamente desde el navegador.
+
+## Novedades Cast
+
+- Google Cast Web Sender para Chromecast, Google TV y televisores compatibles.
+- Envío de MP4, WebM, HLS, DASH y audio mediante URL HTTP/HTTPS.
+- Selector AirPlay en Safari cuando el sistema lo admite.
+- Panel remoto con dispositivo, título, estado, tiempo, búsqueda, volumen, pausa, desconexión y detención.
+- MediaForge Cast Bridge para archivos locales del PC.
+- Bridge de un solo archivo, con ruta aleatoria, CORS y peticiones HTTP Range.
+- Sin subida a la nube ni servidor externo de MediaForge.
 
 ## Funciones principales
 
-- Reproductor local de audio y vídeo con playlist, subtítulos SRT/VTT, velocidad, PiP, pantalla completa, modo cine, captura, repetición A–B y reanudación.
-- Biblioteca inteligente en IndexedDB con historial, favoritos, progreso, etiquetas, colecciones, búsqueda, filtros, ordenación y exportación JSON/CSV.
-- Audio Lab con ecualizador de seis bandas, ganancia, balance, compresor, presets y visualizador.
-- Conversión local a MP4, WebM, MP3, WAV y GIF, además de compresión, extracción de audio y remultiplexado.
-- Inspector profesional con metadatos, compatibilidad estimada, SHA-256, análisis de contenedor y pistas, validación FFmpeg y exportación JSON/TXT.
-- Reparación no destructiva de contenedores mediante remultiplexado, regeneración de marcas de tiempo e índice. Siempre genera una copia nueva.
-- U404 Universal Media Engine: reproducción nativa → remultiplexado → transcodificación local → verificación de la copia.
-- 24 skins U404 y 9 modos de pantalla: Studio, Televisión, CRT 404, VHS 404, Cine, OLED, Cyberpunk, Retro TV y Minimal.
-- PWA instalable con actualización controlada, shell offline, caché bajo demanda del motor FFmpeg y botón para preparar el motor offline.
-- CSP restrictiva y recursos de producción alojados dentro del proyecto, sin CDN.
+- Vídeo y audio local, playlist, subtítulos SRT/VTT, velocidad, PiP, fullscreen real, captura y repetición A–B.
+- Biblioteca IndexedDB con historial, favoritos, progreso, etiquetas, colecciones y exportación.
+- Audio Lab con ecualizador, presets, ganancia, balance, compresor y visualizador.
+- Conversión bajo demanda a MP4, WebM, MP3, WAV y GIF mediante FFmpeg WebAssembly.
+- Inspector, SHA-256, validación y reparación no destructiva.
+- U404 Universal Media Engine: reproducción nativa, remultiplexado y transcodificación de compatibilidad.
+- 24 skins y 9 modos de pantalla U404.
+- PWA compatible con GitHub Pages.
 
-## Arranque rápido en Windows
+## Transmitir una URL o stream
 
-1. Descomprime el ZIP.
-2. Ejecuta `START_MEDIAFORGE.bat`.
-3. El lanzador buscará un puerto libre entre 8080 y 8090 y abrirá la aplicación en el navegador.
+1. Abre MediaForge desde GitHub Pages en Chrome o Edge.
+2. Pulsa el icono **Transmitir** del reproductor.
+3. Pega una URL accesible por el Chromecast.
+4. Selecciona formato o deja la detección automática.
+5. Elige el Chromecast o Google TV.
 
-También puedes iniciar un servidor manualmente desde la carpeta raíz:
+La aplicación utiliza el receptor multimedia predeterminado de Google. No es necesario registrar un receptor personalizado.
 
-```powershell
-python -m http.server 8080 --bind 127.0.0.1
-```
+## Transmitir un archivo local del PC
 
-No abras `index.html` con doble clic para usar FFmpeg o la PWA. WebAssembly, módulos y service workers requieren HTTP local o HTTPS.
+Chromecast no puede abrir directamente una URL temporal `blob:` creada por el navegador. Usa el Bridge incluido:
+
+1. Abre la carpeta `cast-bridge`.
+2. Arrastra el vídeo sobre `START_CAST_BRIDGE.bat`.
+3. Permite el Firewall solamente en redes privadas.
+4. Pega en MediaForge la URL copiada al portapapeles.
+5. Mantén la consola abierta durante la reproducción.
+6. Pulsa `Ctrl+C` al terminar.
+
+El Bridge no recodifica. Para máxima compatibilidad usa MP4 con H.264 y AAC, o convierte antes el archivo desde MediaForge.
 
 ## Publicación en GitHub Pages
 
-El archivo `vendor/ffmpeg/ffmpeg-core.wasm` ocupa aproximadamente 32 MB. GitHub lo admite mediante Git porque está por debajo del límite general de 100 MB por archivo, pero el cargador web del navegador suele rechazar archivos mayores de 25 MB.
+Esta es una edición **Web Light**. Ningún archivo supera los 25 MB, por lo que puede subirse desde la interfaz web de GitHub.
 
-Usa **GitHub Desktop o Git desde terminal**, no `Add file → Upload files`.
+1. Sube el contenido de esta carpeta a la raíz del repositorio.
+2. Abre `Settings → Pages`.
+3. Selecciona `Deploy from a branch`.
+4. Elige `main` y `/(root)`.
 
-```bash
-git init
-git add .
-git commit -m "MediaForge 404 v4.0.0"
-git branch -M main
-git remote add origin https://github.com/USUARIO/REPOSITORIO.git
-git push -u origin main
-```
-
-Después, en el repositorio:
-
-1. Abre `Settings → Pages`.
-2. En `Build and deployment`, selecciona `Deploy from a branch`.
-3. Elige `main` y `/(root)`.
-4. Guarda.
-
-Consulta `docs/GITHUB_PAGES.md` para la guía completa y la lista de comprobación.
+Google Cast requiere HTTPS —GitHub Pages ya lo proporciona— y conexión a Internet para descargar el SDK oficial. FFmpeg también se descarga solo cuando abres una función avanzada.
 
 ## Desarrollo y pruebas
-
-Requisitos: Node.js 20 o superior.
 
 ```bash
 cd source
 npm ci
-npx playwright install chromium
-npm run dev
-```
-
-Build de producción:
-
-```bash
 npm run build
-```
-
-Pruebas automatizadas:
-
-```bash
+npx playwright install chromium
 npm test
 ```
 
-El pipeline copia el núcleo ESM de `@ffmpeg/core` a `public/vendor/ffmpeg`, construye la aplicación con Vite y genera el precache del service worker con los nombres versionados reales.
+Smoke test sin servidor local:
 
-## Privacidad y almacenamiento
-
-- Los archivos no se suben a ninguna nube.
-- `localStorage` conserva ajustes visuales y preferencias.
-- IndexedDB conserva historial, progreso, favoritos, etiquetas, colecciones y, cuando el navegador lo permite, referencias autorizadas a archivos.
-- SHA-256 se calcula con Web Crypto dentro del navegador.
-- Los temporales de FFmpeg se eliminan después de cada operación.
-- El original nunca se sobrescribe durante conversión o reparación.
-- La sección de privacidad permite borrar los datos locales.
+```bash
+npm run test:smoke
+```
 
 ## Límites honestos
 
-MediaForge 404 no es un “códec mágico” y no puede garantizar todas las combinaciones de contenedor, códec, perfil y hardware. Tampoco puede eludir DRM. FFmpeg WebAssembly consume más memoria y es más lento que FFmpeg nativo; los archivos grandes, 4K o de larga duración pueden superar los límites del navegador.
+- Google Cast no puede recibir directamente archivos locales `blob:`.
+- El dispositivo receptor debe poder acceder a la URL y admitir el contenedor/códec.
+- AirPlay depende de Safari y del sistema Apple.
+- DLNA/Miracast no ofrecen una API web estándar equivalente.
+- DRM, URLs con autenticación privada y servidores que bloqueen el acceso pueden fallar.
+- FFmpeg WebAssembly es más lento y consume más memoria que FFmpeg nativo.
 
-La versión 4.0.0 no incorpora modelos de IA dentro del paquete. OCR, transcripción y generación de subtítulos local requieren modelos grandes, una estrategia modular y pruebas de hardware. Se documenta una integración profesional en `docs/LOCAL_AI_ROADMAP.md` en lugar de ofrecer botones simulados.
-
-## Documentación
-
-- `AUDIT_REPORT.md`: auditoría final multidisciplinar y puntuaciones.
-- `TEST_REPORT.md`: build, seguridad y pruebas Playwright realizadas.
-- `FILES_MODIFIED.md`: lista de archivos cambiados y propósito.
-- `CHANGELOG.md`: novedades de la versión.
-- `docs/GITHUB_PAGES.md`: despliegue exacto.
-- `docs/UNIVERSAL_MEDIA_ENGINE.md`: arquitectura de compatibilidad y reparación.
-- `docs/LOCAL_AI_ROADMAP.md`: hoja de ruta para OCR, transcripción y subtítulos locales.
-- `SECURITY.md`: modelo de seguridad y privacidad.
-- `THIRD_PARTY_NOTICES.md`: dependencias y licencias.
-
-## Licencias
-
-El código propio se distribuye bajo MIT. `@ffmpeg/core` 0.12.10 declara GPL-2.0-or-later. Antes de redistribuir, modificar o monetizar el paquete, revisa `THIRD_PARTY_NOTICES.md`, `licenses/GPL-2.0-or-later.txt` y `licenses/SOURCE_OFFER.md`.
+Consulta `docs/CAST.md`, `AUDIT_REPORT.md` y `TEST_REPORT.md` para más detalles.

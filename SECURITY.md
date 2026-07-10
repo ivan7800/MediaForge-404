@@ -2,38 +2,38 @@
 
 ## Modelo
 
-MediaForge 404 es una aplicación estática. No incluye backend, cuentas, base de datos remota, anuncios, analítica ni telemetría.
+MediaForge 404 es una aplicación estática sin cuentas, anuncios, analítica ni backend propio. Los archivos multimedia permanecen en el dispositivo salvo cuando el usuario decide servir uno temporalmente mediante Cast Bridge dentro de su red local.
 
 ## Medidas aplicadas
 
-- Content Security Policy limitada al mismo origen, `blob:` y WebAssembly.
-- Sin scripts, fuentes, modelos o APIs remotas en producción.
-- `object-src 'none'`, `base-uri 'self'` y `form-action 'none'`.
-- Nombres, etiquetas, colecciones y metadatos escapados antes de insertarlos en HTML.
-- Presets cerrados para FFmpeg; no existe consola de comandos arbitrarios.
-- Procesamiento en memoria y sistema virtual de FFmpeg.
-- Exclusión mutua de operaciones pesadas.
-- Limpieza de temporales y revocación de object URLs.
-- Manejo defensivo de IndexedDB, `localStorage`, Cache Storage y service worker.
-- Service worker limitado a solicitudes GET del mismo origen y excluye peticiones `Range`.
-- SHA-256 calculado localmente con Web Crypto y límite preventivo de tamaño.
-- Actualización PWA controlada por mensaje `SKIP_WAITING`.
-- Auditoría npm final sin vulnerabilidades conocidas.
+- CSP restringida al mismo origen, FFmpeg bajo demanda y SDK oficial de Google Cast.
+- Entradas de nombres, etiquetas, títulos y URLs validadas o escapadas.
+- Solo se aceptan URLs HTTP/HTTPS para Cast.
+- Sin consola FFmpeg arbitraria: las operaciones usan presets cerrados.
+- IndexedDB y `localStorage` con manejo defensivo de errores.
+- Service worker limitado a solicitudes GET del mismo origen y excluye peticiones Range.
+- Temporales FFmpeg eliminados tras cada operación.
+- Object URLs revocadas cuando dejan de utilizarse.
+- `npm audit`: 0 vulnerabilidades conocidas en la build final.
 
-## Datos locales
+## Google Cast
 
-`localStorage` conserva preferencias visuales. IndexedDB conserva nombre, tamaño, tipo, favorito, progreso, etiquetas, colección, huella calculada y, cuando el navegador lo permite, referencias autorizadas a archivos. Cache Storage puede conservar la interfaz y el núcleo FFmpeg cuando el usuario prepara el modo offline.
+MediaForge carga el Web Sender SDK oficial desde `www.gstatic.com`. La app entrega al receptor la URL elegida por el usuario y metadatos básicos. MediaForge no descarga, proxyfica ni almacena ese contenido en un servidor propio.
 
-El contenido multimedia no se copia a una nube.
+## Cast Bridge
 
-## Riesgos residuales
+- Expone únicamente el archivo seleccionado.
+- Genera una ruta aleatoria en cada ejecución.
+- Incluye soporte HTTP Range para búsqueda y reanudación.
+- No publica directorios ni permite seleccionar rutas desde la red.
+- Se detiene al cerrar la consola o pulsar `Ctrl+C`.
+- Debe utilizarse solo en redes privadas.
 
-- Un archivo multimedia manipulado podría explotar un fallo del navegador o de FFmpeg; mantén ambos actualizados.
-- Los archivos grandes pueden provocar presión de memoria o cierre de la pestaña.
-- Un service worker antiguo puede requerir recarga o limpieza de datos del sitio.
-- El núcleo GPL y los códecs enlazados requieren revisión de licencias antes de distribución comercial.
-- GitHub Pages no añade cabeceras COOP/COEP personalizadas, por lo que esta edición utiliza el núcleo monohilo compatible.
+Riesgo residual: cualquier dispositivo de la misma red que obtenga la URL completa podría acceder al archivo mientras el Bridge esté activo. No abras el puerto en el router ni lo uses en Wi-Fi público.
 
-## Reporte
+## Dependencias externas
 
-Al publicar el repositorio, activa GitHub Security Advisories o facilita un canal privado. No publiques archivos multimedia sensibles en incidencias públicas.
+- Google Cast Web Sender SDK: cargado bajo demanda desde Google.
+- FFmpeg Core WebAssembly: descargado bajo demanda desde unpkg en la edición Web Light.
+
+Los archivos multimedia se procesan localmente después de cargar FFmpeg.

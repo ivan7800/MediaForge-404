@@ -1,9 +1,9 @@
 {
   "name": "mediaforge-404",
   "private": true,
-  "version": "4.0.1",
+  "version": "4.1.0",
   "type": "module",
-  "description": "Reproductor, inspector y laboratorio multimedia privado con U404 Universal Media Engine, biblioteca inteligente y reparación local.",
+  "description": "Suite multimedia privada con U404 Universal Media Engine, Google Cast, AirPlay y Cast Bridge local.",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/finalize-sw.mjs",
@@ -12,10 +12,10 @@
     "prebuild": "npm run prepare:vendor",
     "test": "npm run build && playwright test",
     "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "test:smoke": "npm run build && node scripts/smoke-inline.mjs"
   },
   "dependencies": {
-    "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "0.12.15",
     "@ffmpeg/util": "0.12.2"
   },
