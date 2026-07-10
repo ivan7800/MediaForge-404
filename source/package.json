@@ -1,0 +1,26 @@
+{
+  "name": "mediaforge-404",
+  "private": true,
+  "version": "4.0.1",
+  "type": "module",
+  "description": "Reproductor, inspector y laboratorio multimedia privado con U404 Universal Media Engine, biblioteca inteligente y reparación local.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/finalize-sw.mjs",
+    "preview": "vite preview",
+    "prepare:vendor": "node scripts/prepare-vendor.mjs",
+    "prebuild": "npm run prepare:vendor",
+    "test": "npm run build && playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "0.12.15",
+    "@ffmpeg/util": "0.12.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "vite": "^7.3.6"
+  }
+}
