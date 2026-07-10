@@ -1,7 +1,7 @@
 {
   "name": "MediaForge 404 — Universal Media Engine",
   "short_name": "MediaForge 404",
-  "description": "Reproductor multimedia privado con biblioteca inteligente, inspector profesional, reparación local, conversión y skins U404.",
+  "description": "Reproductor multimedia privado con biblioteca inteligente, inspector profesional, reparación local, conversión, Google Cast, AirPlay y skins U404.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

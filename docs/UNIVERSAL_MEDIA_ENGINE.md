@@ -61,7 +61,7 @@ La extensión no garantiza que todas sus variantes o códecs internos funcionen.
 
 - Nombres de archivo saneados antes de escribir en el sistema virtual.
 - Argumentos procedentes de presets internos.
-- Recursos del mismo origen; sin CDN.
+- Interfaz y Bridge en el mismo origen; FFmpeg y Google Cast se cargan bajo demanda desde proveedores externos declarados.
 - Operaciones pesadas serializadas.
 - Temporales eliminados en `finally`.
 - Original intacto.

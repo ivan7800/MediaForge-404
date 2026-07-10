@@ -492,3 +492,52 @@ html.is-player-fullscreen .player-stage {
     min-height: 100dvh !important;
   }
 }
+
+/* MediaForge Cast --------------------------------------------------------- */
+.cast-btn { position: relative; }
+.cast-availability-dot { position: absolute; right: 4px; top: 4px; width: 7px; height: 7px; border: 1px solid var(--bg); border-radius: 50%; background: #667085; box-shadow: 0 0 0 2px rgba(0,0,0,.18); }
+.cast-availability-dot[data-state="available"] { background: #39d98a; box-shadow: 0 0 10px rgba(57,217,138,.72); }
+.cast-availability-dot[data-state="connected"] { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.cast-availability-dot[data-state="airplay"] { background: #7aa7ff; box-shadow: 0 0 10px rgba(122,167,255,.65); }
+.cast-btn.cast-unavailable:not(.active) { opacity: .72; }
+
+.cast-strip { margin-top: 10px; min-height: 62px; display: grid; grid-template-columns: auto minmax(130px,.8fr) minmax(240px,1.2fr) auto; align-items: center; gap: 12px; padding: 10px 13px; border: 1px solid color-mix(in srgb,var(--accent) 30%,var(--border)); border-radius: 14px; background: linear-gradient(110deg,color-mix(in srgb,var(--accent) 8%,var(--surface-soft)),var(--surface-soft)); box-shadow: inset 0 1px rgba(255,255,255,.03); }
+.cast-strip[hidden] { display: none !important; }
+.cast-live-dot { width: 9px; height: 9px; border-radius: 50%; background: #39d98a; box-shadow: 0 0 13px rgba(57,217,138,.8); animation: castPulse 1.8s ease-in-out infinite; }
+.cast-strip-copy { min-width: 0; }
+.cast-strip-copy strong, .cast-strip-copy p { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cast-strip-copy strong { color: var(--text); font-size: 10px; }
+.cast-strip-copy p { margin: 4px 0 0; color: var(--muted); font-size: 8px; }
+.cast-time { display: grid; grid-template-columns: auto minmax(80px,1fr) auto; align-items: center; gap: 8px; color: var(--muted); font-size: 8px; }
+.cast-time input, .cast-actions input { min-width: 0; }
+.cast-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.cast-actions .icon-btn { width: 32px; height: 32px; }
+.cast-actions .compact { min-height: 32px; padding: 0 10px; font-size: 8px; }
+.cast-actions #castVolume { width: 72px; }
+
+.cast-capability-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+.cast-capability { padding: 12px; border: 1px solid var(--border); border-radius: 13px; background: rgba(255,255,255,.022); }
+.cast-capability.ready { border-color: color-mix(in srgb,var(--accent) 35%,var(--border)); background: color-mix(in srgb,var(--accent) 6%,transparent); }
+.cast-capability strong { color: var(--text); font-size: 10px; }
+.cast-capability p { margin: 5px 0 0; font-size: 9px; line-height: 1.5; }
+.cast-modal-body code { padding: 2px 5px; border: 1px solid var(--border); border-radius: 6px; background: rgba(0,0,0,.2); color: var(--text); }
+.cast-form-grid { margin-top: 10px; }
+.cast-privacy-note { margin-top: 12px; padding: 9px 11px; border-left: 2px solid var(--accent); color: var(--muted); background: rgba(255,255,255,.018); font-size: 8px; }
+.cast-modal-footer { flex-wrap: wrap; }
+.link-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+@keyframes castPulse { 0%,100% { opacity: .55; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+
+@media (max-width: 1050px) {
+  .cast-strip { grid-template-columns: auto minmax(120px,1fr) minmax(220px,1.6fr); }
+  .cast-actions { grid-column: 2 / -1; justify-content: flex-start; }
+}
+@media (max-width: 680px) {
+  .cast-strip { grid-template-columns: auto minmax(0,1fr); gap: 8px; }
+  .cast-time, .cast-actions { grid-column: 1 / -1; }
+  .cast-actions { justify-content: space-between; flex-wrap: wrap; }
+  .cast-actions #castVolume { flex: 1; min-width: 80px; }
+  .cast-capability-grid { grid-template-columns: 1fr; }
+  .cast-modal-footer > * { flex: 1 1 145px; }
+}
+@media (prefers-reduced-motion: reduce) { .cast-live-dot { animation: none; } }

@@ -30,6 +30,7 @@ const icons = {
   mute: '<path d="M11 5 6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6"/>',
   fullscreen: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
   pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="5" rx="1"/>',
+  cast: '<path d="M4 18.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/><path d="M2.5 14.5a7 7 0 0 1 7 7M2.5 10a11.5 11.5 0 0 1 11.5 11.5"/><path d="M8 4h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3"/>',
   subtitles: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h4M13 14h4M7 17h7"/>',
   repeat: '<path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',
   camera: '<path d="M4 7h4l2-3h4l2 3h4v12H4z"/><circle cx="12" cy="13" r="4"/>',
@@ -89,7 +90,8 @@ const state = {
   dragDepth: 0,
   universal: { busy: false, itemId: null, cancelled: false },
   tvClockTimer: 0,
-  lastFocus: null
+  lastFocus: null,
+  cast: { sdkReady: false, available: false, castState: 'NO_DEVICES_AVAILABLE', session: null, remotePlayer: null, remoteController: null, lastUrl: '', lastTitle: '', lastMime: 'video/mp4', airplayAvailable: false }
 };
 
 const viewMeta = {
@@ -179,6 +181,12 @@ function playerView() {
           <div class="tv-osd" aria-hidden="true"><span class="tv-channel">CH 404</span><span id="tvNowPlaying">MEDIAFORGE</span><time id="tvClock">--:--</time></div>
         </div>
         <div class="engine-strip native" id="engineStrip"><span class="engine-signal"></span><div><strong id="engineStatusTitle">U404 Universal Media Engine</strong><p id="engineStatusText">Abre un archivo para comprobar su compatibilidad.</p></div><div class="engine-actions"><button class="soft-btn compact" id="prepareCompatibilityBtn" hidden>${svg('magic')} Preparar</button><button class="soft-btn compact" id="downloadCompatibilityBtn" hidden>${svg('download')} Guardar</button></div></div>
+        <div class="cast-strip" id="castStrip" hidden>
+          <span class="cast-live-dot"></span>
+          <div class="cast-strip-copy"><strong id="castDeviceName">Transmitiendo</strong><p id="castMediaStatus">Conectado a Google Cast</p></div>
+          <div class="cast-time"><span id="castCurrentTime">00:00</span><input id="castSeek" type="range" min="0" max="1000" value="0" aria-label="Posición remota"/><span id="castDuration">00:00</span></div>
+          <div class="cast-actions"><button class="icon-btn" id="castPlayPauseBtn" aria-label="Pausar o reanudar en TV">${svg('pause')}</button><input id="castVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volumen del televisor"/><button class="soft-btn compact" id="castDisconnectBtn">Desconectar</button><button class="danger-btn compact" id="castStopBtn">Detener</button></div>
+        </div>
         <div class="player-controls">
           <div class="seek-row"><span id="currentTime">00:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posición"/><span id="duration">00:00</span></div>
           <div class="control-row">
@@ -195,6 +203,7 @@ function playerView() {
             <div class="volume-wrap"><button class="icon-btn" id="muteBtn" aria-label="Silenciar">${svg('volume')}</button><input id="volume" type="range" min="0" max="1" step="0.01" value=".85" aria-label="Volumen" /></div>
             <select class="speed-select" id="speed" aria-label="Velocidad"><option>.5×</option><option>.75×</option><option selected>1×</option><option>1.25×</option><option>1.5×</option><option>2×</option><option>3×</option></select>
             <button class="icon-btn hide-mobile" id="pipBtn" aria-label="Picture in Picture">${svg('pip')}</button>
+            <button class="icon-btn cast-btn" id="castBtn" aria-label="Transmitir a una pantalla" aria-haspopup="dialog" title="Google Cast, Chromecast y AirPlay">${svg('cast')}<span class="cast-availability-dot" id="castAvailabilityDot"></span></button>
             <button class="icon-btn hide-mobile" id="tvModeBtn" aria-label="Cambiar modo de pantalla" title="Modo de pantalla">${svg('tv')}</button>
             <button class="icon-btn hide-mobile" id="cinemaBtn" aria-label="Modo cine inmersivo">${svg('cinema')}</button>
             <button class="icon-btn" id="fullscreenBtn" aria-label="Pantalla completa">${svg('fullscreen')}</button>
@@ -252,7 +261,7 @@ function converterView() {
       <article class="card section-card">
         <div class="section-title"><div class="glyph">${svg('file')}</div><div><h3>Archivo de origen</h3><p>La conversión se realiza dentro de este dispositivo.</p></div></div>
         <div class="file-well" id="converterWell"><div><div class="well-icon">${svg('folder')}</div><h4>Selecciona un vídeo o audio</h4><p>FFmpeg se cargará únicamente cuando inicies una conversión.</p><button class="soft-btn" id="selectConverterBtn">Elegir archivo</button></div></div>
-        <div class="ffmpeg-status" id="ffmpegStatus"><strong>Motor en espera.</strong> El núcleo local de FFmpeg ocupa aproximadamente 31 MB y se carga bajo demanda.</div>
+        <div class="ffmpeg-status" id="ffmpegStatus"><strong>Motor en espera.</strong> FFmpeg Core se descarga bajo demanda y después procesa los archivos localmente.</div>
       </article>
       <article class="card section-card">
         <div class="section-title"><div class="glyph">${svg('convert')}</div><div><h3>Operación</h3><p>Presets seguros para conversión, extracción y compresión.</p></div></div>
@@ -383,6 +392,7 @@ async function init() {
   startTvClock();
   setupVisualizer();
   registerPWA();
+  initCastIntegration();
   if (!state.settings.acceptedLegal) showPrivacyModal(true);
 }
 
@@ -412,6 +422,12 @@ function bindUI() {
   $('#mediaElement').addEventListener('webkitbeginfullscreen', () => document.documentElement.classList.add('is-native-video-fullscreen'));
   $('#mediaElement').addEventListener('webkitendfullscreen', () => document.documentElement.classList.remove('is-native-video-fullscreen'));
   $('#pipBtn').addEventListener('click', togglePip);
+  $('#castBtn').addEventListener('click', showCastModal);
+  $('#castPlayPauseBtn').addEventListener('click', toggleRemotePlayback);
+  $('#castSeek').addEventListener('change', seekRemotePlayback);
+  $('#castVolume').addEventListener('input', setRemoteVolume);
+  $('#castDisconnectBtn').addEventListener('click', () => endCastSession(false));
+  $('#castStopBtn').addEventListener('click', () => endCastSession(true));
   $('#subtitleBtn').addEventListener('click', () => $('#subtitleInput').click());
   $('#subtitleInput').addEventListener('change', e => loadSubtitle(e.target.files[0]));
   $('#captureBtn').addEventListener('click', captureFrame);
@@ -670,6 +686,242 @@ async function toggleFullscreen() {
     toast('Pantalla completa no disponible','El navegador ha bloqueado esta función o el archivo todavía no está listo.','warning');
   }
 }
+
+function initCastIntegration() {
+  window.addEventListener('mediaforge-cast-api', event => configureCast(Boolean(event.detail?.isAvailable), event.detail?.errorInfo));
+  window.__onGCastApiAvailable = function (isAvailable, errorInfo) {
+    window.__mediaforgeCastAvailability = { isAvailable: Boolean(isAvailable), errorInfo: errorInfo || null };
+    window.dispatchEvent(new CustomEvent('mediaforge-cast-api', { detail: window.__mediaforgeCastAvailability }));
+  };
+  if (!document.querySelector('script[data-mediaforge-cast-sdk]')) {
+    const sdk = document.createElement('script');
+    sdk.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+    sdk.async = true;
+    sdk.dataset.mediaforgeCastSdk = 'true';
+    sdk.onerror = () => { state.cast.sdkReady = false; updateCastButton(); };
+    document.head.appendChild(sdk);
+  }
+  if (window.__mediaforgeCastAvailability) {
+    configureCast(Boolean(window.__mediaforgeCastAvailability.isAvailable), window.__mediaforgeCastAvailability.errorInfo);
+  }
+  const media = $('#mediaElement');
+  state.cast.airplayAvailable = typeof media?.webkitShowPlaybackTargetPicker === 'function';
+  media?.addEventListener?.('webkitplaybacktargetavailabilitychanged', event => {
+    state.cast.airplayAvailable = event.availability === 'available' || typeof media.webkitShowPlaybackTargetPicker === 'function';
+    updateCastButton();
+  });
+  updateCastButton();
+}
+
+function configureCast(isAvailable, errorInfo = null) {
+  if (!isAvailable || !window.cast?.framework || !window.chrome?.cast) {
+    state.cast.sdkReady = false;
+    if (errorInfo) console.warn('Google Cast SDK no disponible:', errorInfo);
+    updateCastButton();
+    return;
+  }
+  try {
+    const context = cast.framework.CastContext.getInstance();
+    context.setOptions({
+      receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      resumeSavedSession: true
+    });
+    context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, event => {
+      state.cast.castState = event.castState;
+      state.cast.available = event.castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
+      updateCastButton();
+      syncCastSession();
+    });
+    context.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, syncCastSession);
+    state.cast.sdkReady = true;
+    state.cast.castState = context.getCastState?.() || cast.framework.CastState.NOT_CONNECTED;
+    state.cast.available = state.cast.castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
+    syncCastSession();
+    updateCastButton();
+  } catch (error) {
+    console.warn('No se pudo inicializar Google Cast:', error);
+    state.cast.sdkReady = false;
+    updateCastButton();
+  }
+}
+
+function updateCastButton() {
+  const button = $('#castBtn');
+  const dot = $('#castAvailabilityDot');
+  if (!button || !dot) return;
+  const connected = Boolean(state.cast.session);
+  button.classList.toggle('active', connected);
+  button.classList.toggle('cast-unavailable', !state.cast.available && !state.cast.airplayAvailable);
+  button.setAttribute('aria-pressed', String(connected));
+  const label = connected ? 'Controlar transmisión actual' : 'Transmitir a Chromecast, Google TV o AirPlay';
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  dot.dataset.state = connected ? 'connected' : state.cast.available ? 'available' : state.cast.airplayAvailable ? 'airplay' : 'unavailable';
+}
+
+function syncCastSession() {
+  if (!state.cast.sdkReady || !window.cast?.framework) return;
+  const context = cast.framework.CastContext.getInstance();
+  const session = context.getCurrentSession();
+  state.cast.session = session || null;
+  if (session && !state.cast.remotePlayer) {
+    state.cast.remotePlayer = new cast.framework.RemotePlayer();
+    state.cast.remoteController = new cast.framework.RemotePlayerController(state.cast.remotePlayer);
+    const events = cast.framework.RemotePlayerEventType;
+    [events.IS_CONNECTED_CHANGED, events.IS_PAUSED_CHANGED, events.CURRENT_TIME_CHANGED, events.DURATION_CHANGED, events.VOLUME_LEVEL_CHANGED, events.PLAYER_STATE_CHANGED, events.MEDIA_INFO_CHANGED].filter(Boolean).forEach(type => {
+      state.cast.remoteController.addEventListener(type, updateCastController);
+    });
+  }
+  if (!session) {
+    state.cast.remotePlayer = null;
+    state.cast.remoteController = null;
+  }
+  updateCastController();
+  updateCastButton();
+}
+
+function updateCastController() {
+  const strip = $('#castStrip');
+  if (!strip) return;
+  const session = state.cast.session;
+  const player = state.cast.remotePlayer;
+  strip.hidden = !session;
+  if (!session || !player) return;
+  const deviceName = session.getCastDevice?.().friendlyName || 'Pantalla Cast';
+  $('#castDeviceName').textContent = deviceName;
+  const title = player.mediaInfo?.metadata?.title || state.cast.lastTitle || 'Contenido remoto';
+  $('#castMediaStatus').textContent = `${title} · ${player.playerState || 'Conectado'}`;
+  $('#castCurrentTime').textContent = formatTime(player.currentTime || 0);
+  $('#castDuration').textContent = formatTime(player.duration || 0);
+  $('#castSeek').value = player.duration ? String(clamp((player.currentTime / player.duration) * 1000, 0, 1000)) : '0';
+  $('#castSeek').disabled = !player.canSeek;
+  $('#castVolume').value = String(Number.isFinite(player.volumeLevel) ? player.volumeLevel : 1);
+  $('#castPlayPauseBtn').innerHTML = svg(player.isPaused ? 'play' : 'pause');
+  $('#castPlayPauseBtn').setAttribute('aria-label', player.isPaused ? 'Reanudar en TV' : 'Pausar en TV');
+}
+
+function inferCastMime(url, selected = '') {
+  if (selected && selected !== 'auto') return selected;
+  const clean = url.split(/[?#]/)[0].toLowerCase();
+  if (clean.endsWith('.m3u8')) return 'application/x-mpegURL';
+  if (clean.endsWith('.mpd')) return 'application/dash+xml';
+  if (clean.endsWith('.webm')) return 'video/webm';
+  if (clean.endsWith('.mp3')) return 'audio/mpeg';
+  if (clean.endsWith('.m4a') || clean.endsWith('.aac')) return 'audio/mp4';
+  if (clean.endsWith('.ogg') || clean.endsWith('.opus')) return 'audio/ogg';
+  if (clean.endsWith('.wav')) return 'audio/wav';
+  return 'video/mp4';
+}
+
+function validCastUrl(value) {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
+
+function showCastModal() {
+  const connected = Boolean(state.cast.session);
+  const castSupport = state.cast.sdkReady
+    ? (state.cast.available ? 'Hay dispositivos Google Cast disponibles.' : 'Google Cast está cargado, pero no se detectan dispositivos compatibles en esta red.')
+    : 'Google Cast requiere Chrome, Edge u otro navegador compatible y conexión a Internet para cargar el SDK oficial.';
+  const airplaySupport = state.cast.airplayAvailable ? 'AirPlay está disponible para el archivo cargado en este dispositivo.' : 'AirPlay no está disponible en este navegador.';
+  openModal(`<div class="modal-header"><div class="modal-icon">${svg('cast')}</div><div><h3 id="modalTitle">Transmitir a una pantalla</h3><p>Google Cast · Chromecast · Google TV · AirPlay</p></div><button class="icon-btn" data-close-modal aria-label="Cerrar">${svg('close')}</button></div>
+    <div class="modal-body cast-modal-body">
+      <div class="cast-capability-grid"><div class="cast-capability ${state.cast.available || connected ? 'ready' : ''}"><strong>Google Cast</strong><p>${escapeHtml(castSupport)}</p></div><div class="cast-capability ${state.cast.airplayAvailable ? 'ready' : ''}"><strong>AirPlay</strong><p>${escapeHtml(airplaySupport)}</p></div></div>
+      <div class="warning-box"><strong>Archivos locales:</strong> Chromecast no puede abrir una URL temporal <code>blob:</code>. Usa MediaForge Cast Bridge para crear una dirección privada dentro de tu Wi‑Fi y pégala abajo. AirPlay sí puede aceptar el vídeo local en Safari cuando el sistema lo permite.</div>
+      <div class="field full"><label for="castUrlInput">URL del vídeo, audio o stream</label><input class="text-input" id="castUrlInput" inputmode="url" autocomplete="url" value="${escapeAttr(state.cast.lastUrl)}" placeholder="https://…/pelicula.mp4 o http://192.168.1.x:8787/media/…" /></div>
+      <div class="form-grid cast-form-grid"><div class="field"><label for="castTitleInput">Título</label><input class="text-input" id="castTitleInput" maxlength="120" value="${escapeAttr(state.cast.lastTitle)}" placeholder="MediaForge 404" /></div><div class="field"><label for="castMimeInput">Formato</label><select class="filter-select" id="castMimeInput"><option value="auto">Detectar automáticamente</option><option value="video/mp4">MP4 / H.264</option><option value="video/webm">WebM</option><option value="application/x-mpegURL">HLS (.m3u8)</option><option value="application/dash+xml">MPEG-DASH (.mpd)</option><option value="audio/mpeg">MP3</option><option value="audio/mp4">M4A / AAC</option><option value="audio/ogg">Ogg / Opus</option></select></div></div>
+      <div class="cast-privacy-note">MediaForge solo entrega la URL al dispositivo receptor. No sube el archivo ni actúa como intermediario.</div>
+    </div>
+    <div class="modal-footer cast-modal-footer"><button class="soft-btn" id="castBridgeGuideBtn">${svg('info')} Cast Bridge</button>${state.cast.airplayAvailable ? `<button class="soft-btn" id="airplayBtn">${svg('cast')} AirPlay</button>` : ''}<button class="primary-btn" id="startCastBtn">${svg('cast')} ${connected ? 'Enviar a TV conectada' : 'Elegir pantalla y enviar'}</button></div>`);
+  $('#castMimeInput').value = state.cast.lastMime || 'auto';
+  $('#castBridgeGuideBtn').addEventListener('click', openCastBridgeGuide);
+  $('#airplayBtn')?.addEventListener('click', showAirPlayPicker);
+  $('#startCastBtn').addEventListener('click', castFromModal);
+}
+
+function openCastBridgeGuide() {
+  openModal(`<div class="modal-header"><div class="modal-icon">${svg('cast')}</div><div><h3 id="modalTitle">MediaForge Cast Bridge</h3><p>Archivos locales por tu red doméstica</p></div><button class="icon-btn" data-close-modal aria-label="Cerrar">${svg('close')}</button></div><div class="modal-body"><ol class="engine-steps"><li>Descarga o abre la carpeta <code>cast-bridge</code> incluida con MediaForge.</li><li>Arrastra el vídeo sobre <code>START_CAST_BRIDGE.bat</code>.</li><li>Windows mostrará una URL temporal y la copiará al portapapeles.</li><li>Pega esa URL en “Transmitir a una pantalla”.</li><li>Mantén la ventana del Bridge abierta mientras ves el contenido.</li></ol><div class="warning-box">El archivo solo se sirve en tu red local mediante una ruta aleatoria. Cierra el Bridge al terminar y no lo uses en redes públicas.</div></div><div class="modal-footer"><a class="soft-btn link-btn" href="./cast-bridge/README.html" target="_blank" rel="noopener">Abrir guía</a><a class="primary-btn link-btn" href="./cast-bridge/MediaForgeCastBridge.py" download>Descargar Bridge</a></div>`);
+}
+
+async function castFromModal() {
+  const rawUrl = $('#castUrlInput').value.trim();
+  const url = validCastUrl(rawUrl);
+  if (!url) { toast('URL no válida','Utiliza una dirección HTTP o HTTPS accesible desde el Chromecast.','warning'); $('#castUrlInput').focus(); return; }
+  const title = $('#castTitleInput').value.trim() || url.split('/').pop()?.split(/[?#]/)[0] || 'MediaForge 404';
+  const mime = inferCastMime(url, $('#castMimeInput').value);
+  state.cast.lastUrl = url;
+  state.cast.lastTitle = title;
+  state.cast.lastMime = $('#castMimeInput').value;
+  if (!state.cast.sdkReady) { toast('Google Cast no disponible','Abre MediaForge en Chrome o Edge y comprueba que Internet y la red local estén disponibles.','warning'); return; }
+  try {
+    const context = cast.framework.CastContext.getInstance();
+    if (!context.getCurrentSession()) await context.requestSession();
+    const session = context.getCurrentSession();
+    if (!session) throw new Error('No se seleccionó ningún dispositivo.');
+    const mediaInfo = new chrome.cast.media.MediaInfo(url, mime);
+    const metadata = new chrome.cast.media.GenericMediaMetadata();
+    metadata.title = title;
+    metadata.subtitle = 'MediaForge 404';
+    mediaInfo.metadata = metadata;
+    mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
+    const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    request.autoplay = true;
+    const localMedia = $('#mediaElement');
+    if (Number.isFinite(localMedia.currentTime) && localMedia.currentTime > 0) request.currentTime = localMedia.currentTime;
+    await session.loadMedia(request);
+    localMedia.pause();
+    closeModal();
+    syncCastSession();
+    toast('Transmitiendo en la TV', `${title} · ${session.getCastDevice?.().friendlyName || 'Google Cast'}`, 'success');
+  } catch (error) {
+    if (/cancel|cancelled/i.test(error?.message || String(error))) return;
+    console.warn('Cast error:', error);
+    toast('No se pudo iniciar la transmisión', error?.message || 'Comprueba la URL, el formato y que ambos dispositivos estén en la misma red.', 'error');
+  }
+}
+
+function showAirPlayPicker() {
+  const media = $('#mediaElement');
+  if (!state.playlist[state.currentIndex]) { toast('Carga primero un archivo','AirPlay necesita que haya un vídeo o audio abierto en MediaForge.','warning'); return; }
+  if (typeof media.webkitShowPlaybackTargetPicker !== 'function') { toast('AirPlay no disponible','Esta función requiere Safari y un dispositivo AirPlay compatible.','warning'); return; }
+  closeModal();
+  try { media.webkitShowPlaybackTargetPicker(); }
+  catch (error) { toast('No se pudo abrir AirPlay', error?.message || 'El navegador bloqueó el selector.','warning'); }
+}
+
+function toggleRemotePlayback() {
+  const controller = state.cast.remoteController;
+  if (!controller) return;
+  try { controller.playOrPause(); } catch (error) { toast('Control remoto no disponible', error?.message || 'No se pudo cambiar la reproducción.','warning'); }
+}
+
+function seekRemotePlayback() {
+  const player = state.cast.remotePlayer;
+  const controller = state.cast.remoteController;
+  if (!player || !controller || !player.duration) return;
+  player.currentTime = (Number($('#castSeek').value) / 1000) * player.duration;
+  try { controller.seek(); } catch {}
+}
+
+function setRemoteVolume() {
+  const player = state.cast.remotePlayer;
+  const controller = state.cast.remoteController;
+  if (!player || !controller) return;
+  player.volumeLevel = Number($('#castVolume').value);
+  try { controller.setVolumeLevel(); } catch {}
+}
+
+function endCastSession(stopCasting) {
+  if (!state.cast.sdkReady) return;
+  try {
+    cast.framework.CastContext.getInstance().endCurrentSession(Boolean(stopCasting));
+    toast(stopCasting ? 'Transmisión detenida' : 'MediaForge desconectado', stopCasting ? 'La reproducción en la TV ha finalizado.' : 'La TV puede continuar reproduciendo de forma independiente.');
+  } catch (error) { toast('No se pudo cerrar la sesión', error?.message || 'Inténtalo de nuevo.','warning'); }
+}
+
 async function togglePip() {
   const media = $('#mediaElement');
   if (state.playlist[state.currentIndex]?.kind === 'audio') { toast('Picture in Picture','Solo está disponible para vídeo.','warning'); return; }
@@ -869,7 +1121,7 @@ async function inspectFile(file){
   ['deepInspectBtn','checksumBtn','validateMediaBtn','repairMediaBtn','exportInspectBtn','exportInspectTxtBtn'].forEach(id=>$('#'+id).disabled=false);
   $('#deepOutput').textContent='El análisis profundo todavía no se ha ejecutado.';$('#validationOutput').textContent='Sin validación.';
   const metadata=await basicMetadata(file);const profile=compatibilityProfile(file);metadata['Ruta U404']=profile.label;
-  state.inspectorMetadata=metadata;state.inspectorReport={schema:'mediaforge-inspector-v2',appVersion:'4.0.0',generatedAt:new Date().toISOString(),file:{name:file.name,size:file.size,type:file.type||mimeFromName(file.name),lastModified:new Date(file.lastModified).toISOString(),kind:getKind(file)},basic:metadata,compatibility:profile,checksum:null,probe:null,validation:null,repair:null};
+  state.inspectorMetadata=metadata;state.inspectorReport={schema:'mediaforge-inspector-v2',appVersion:'4.1.0',generatedAt:new Date().toISOString(),file:{name:file.name,size:file.size,type:file.type||mimeFromName(file.name),lastModified:new Date(file.lastModified).toISOString(),kind:getKind(file)},basic:metadata,compatibility:profile,checksum:null,probe:null,validation:null,repair:null};
   renderMetadata(metadata);renderDiagnosticCards();
   const support=canPlay(file);const banner=$('#compatBanner');$('.signal',banner).style.background=support==='probably'?'var(--ok)':support==='maybe'?'var(--warning)':'var(--danger)';$('strong',banner).textContent=support==='probably'?'Compatible según el navegador':support==='maybe'?'Compatibilidad posible':'Compatibilidad no confirmada';$('p',banner).textContent=support==='no'?'El motor U404 puede intentar remultiplexar o crear una copia compatible. El análisis profundo identificará las pistas.':'El resultado depende también del códec interno del contenedor. U404 conserva el original intacto.';
 }
@@ -950,7 +1202,7 @@ function exportInspector(format='json'){
 }
 
 function showPrivacyModal(firstRun=false){
-  openModal(`<div class="modal-header"><div class="modal-icon">${svg('shield')}</div><div><h3 id="modalTitle">Privacidad local por diseño</h3><p>MediaForge 404 · U404 Universal Media Engine</p></div>${firstRun?'':`<button class="icon-btn" data-close-modal aria-label="Cerrar">${svg('close')}</button>`}</div><div class="modal-body"><h4>Tus archivos permanecen en tu dispositivo</h4><p>MediaForge 404 reproduce y procesa archivos mediante las API del navegador. No incluye cuentas, anuncios, telemetría ni subida automática a servidores.</p><h4>Datos guardados</h4><p>La biblioteca conserva nombres, tamaños, favoritos, duración y progreso en el almacenamiento local del navegador. Cuando el navegador permite guardar referencias de archivos, puede volver a solicitar permiso antes de abrirlos.</p><h4>Conversión</h4><p>FFmpeg WebAssembly se ejecuta localmente. El motor universal puede remultiplexar o transcodificar una copia temporal; nunca modifica el archivo original. Los archivos grandes pueden consumir mucha memoria o tardar más que en una aplicación de escritorio.</p><h4>Limitaciones</h4><p>La compatibilidad depende del navegador, del contenedor, del códec y de la memoria disponible. No se admite la elusión de DRM. WebAssembly tiene un límite práctico para archivos grandes y no sustituye totalmente a VLC de escritorio.</p></div><div class="modal-footer">${firstRun?'<button class="primary-btn" id="acceptLegalBtn">Entendido, entrar</button>':'<button class="primary-btn" data-close-modal>Cerrar</button>'}</div>`);
+  openModal(`<div class="modal-header"><div class="modal-icon">${svg('shield')}</div><div><h3 id="modalTitle">Privacidad local por diseño</h3><p>MediaForge 404 · U404 Universal Media Engine</p></div>${firstRun?'':`<button class="icon-btn" data-close-modal aria-label="Cerrar">${svg('close')}</button>`}</div><div class="modal-body"><h4>Tus archivos permanecen en tu dispositivo</h4><p>MediaForge 404 reproduce y procesa archivos mediante las API del navegador. No incluye cuentas, anuncios, telemetría ni subida automática a servidores.</p><h4>Datos guardados</h4><p>La biblioteca conserva nombres, tamaños, favoritos, duración y progreso en el almacenamiento local del navegador. Cuando el navegador permite guardar referencias de archivos, puede volver a solicitar permiso antes de abrirlos.</p><h4>Conversión</h4><p>FFmpeg WebAssembly se descarga bajo demanda y después se ejecuta localmente. El motor universal puede remultiplexar o transcodificar una copia temporal; nunca modifica el archivo original. Los archivos grandes pueden consumir mucha memoria o tardar más que en una aplicación de escritorio.</p><h4>Transmisión</h4><p>Google Cast recibe únicamente la URL que decides enviar. Para archivos del PC, Cast Bridge sirve temporalmente un único archivo dentro de tu red privada. AirPlay utiliza el selector nativo de Safari cuando está disponible.</p><h4>Limitaciones</h4><p>La compatibilidad depende del navegador, del contenedor, del códec y de la memoria disponible. No se admite la elusión de DRM. WebAssembly tiene un límite práctico para archivos grandes y no sustituye totalmente a VLC de escritorio.</p></div><div class="modal-footer">${firstRun?'<button class="primary-btn" id="acceptLegalBtn">Entendido, entrar</button>':'<button class="primary-btn" data-close-modal>Cerrar</button>'}</div>`);
   if(firstRun)$('#acceptLegalBtn').addEventListener('click',()=>{state.settings.acceptedLegal=true;saveSettings();closeModal();});
 }
 function confirmClearData(){openModal(`<div class="modal-header"><div class="modal-icon">${svg('alert')}</div><div><h3 id="modalTitle">Borrar datos locales</h3><p>Esta acción no elimina tus archivos originales</p></div><button class="icon-btn" data-close-modal>${svg('close')}</button></div><div class="modal-body"><p>Se eliminarán el historial, favoritos, puntos de reproducción y permisos guardados por MediaForge 404 en este navegador.</p></div><div class="modal-footer"><button class="soft-btn" data-close-modal>Cancelar</button><button class="danger-btn" id="confirmClearBtn">Borrar definitivamente</button></div>`);$('#confirmClearBtn').addEventListener('click',clearAllData);}
@@ -1068,6 +1320,78 @@ function cancelUniversalPreparation(){state.universal.cancelled=true;try{state.f
 function downloadCompatibleVersion(){const item=state.playlist[state.currentIndex];if(!item?.compatBlob)return;downloadBlob(item.compatBlob,item.compatName||`${safeStem(item.name)}-compatible`);}
 async function probePlayableBlob(blob,kind){return new Promise(resolve=>{const el=document.createElement(kind==='audio'?'audio':'video');const url=URL.createObjectURL(blob);let done=false;const finish=v=>{if(done)return;done=true;clearTimeout(timer);URL.revokeObjectURL(url);el.removeAttribute('src');resolve(v);};const timer=setTimeout(()=>finish(false),4500);el.preload='metadata';el.onloadedmetadata=()=>finish(true);el.onerror=()=>finish(false);el.src=url;el.load();});}
 
+
+function bindDragDrop() {
+  ['dragenter','dragover','dragleave','drop'].forEach(type => window.addEventListener(type, event => {
+    event.preventDefault();
+    event.stopPropagation();
+  }));
+  window.addEventListener('dragenter', () => {
+    state.dragDepth++;
+    $('#dropOverlay')?.classList.add('visible');
+  });
+  window.addEventListener('dragleave', () => {
+    state.dragDepth--;
+    if (state.dragDepth <= 0) {
+      state.dragDepth = 0;
+      $('#dropOverlay')?.classList.remove('visible');
+    }
+  });
+  window.addEventListener('drop', event => {
+    state.dragDepth = 0;
+    $('#dropOverlay')?.classList.remove('visible');
+    const files = [...(event.dataTransfer?.files || [])];
+    if (files.length) addFiles(files);
+  });
+}
+
+function handleShortcuts(event) {
+  const modalOpen = $('#modalBackdrop')?.classList.contains('open');
+  if (modalOpen) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal();
+      return;
+    }
+    if (event.key === 'Tab') {
+      const focusable = $$('#modal button:not([disabled]), #modal [href], #modal input:not([disabled]), #modal select:not([disabled]), #modal textarea:not([disabled]), #modal [tabindex]:not([tabindex="-1"])');
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    return;
+  }
+
+  const target = event.target;
+  if (target instanceof Element && (target.matches('input,select,textarea,[contenteditable="true"]') || target.closest('[contenteditable="true"]'))) return;
+  const media = $('#mediaElement');
+  if (!media) return;
+  if (event.code === 'Space') {
+    event.preventDefault();
+    togglePlay();
+  } else if (event.key === 'ArrowRight') {
+    media.currentTime = Math.min(media.duration || 0, media.currentTime + (event.shiftKey ? 30 : 5));
+  } else if (event.key === 'ArrowLeft') {
+    media.currentTime = Math.max(0, media.currentTime - (event.shiftKey ? 30 : 5));
+  } else if (event.key.toLowerCase() === 'f') {
+    toggleFullscreen();
+  } else if (event.key.toLowerCase() === 'm') {
+    media.muted = !media.muted;
+    updateMuteIcon();
+  } else if (event.key.toLowerCase() === 'o') {
+    openMediaPicker();
+  } else if (event.key === 'Escape' && document.body.classList.contains('cinema')) {
+    document.body.classList.remove('cinema');
+  }
+}
+
 function renderCompatibility(){const features=[['WebAssembly',typeof WebAssembly==='object','Motor universal y conversión'],['Media Capabilities','mediaCapabilities'in navigator,'Diagnóstico de decodificación'],['WebCodecs','VideoDecoder'in window||'AudioDecoder'in window,'Aceleración disponible según navegador'],['IndexedDB','indexedDB'in window,'Biblioteca y progreso'],['Web Audio API',!!(window.AudioContext||window.webkitAudioContext),'Ecualizador y visualizador'],['File System Access','showOpenFilePicker'in window,'Permisos persistentes de archivos'],['Picture in Picture','pictureInPictureEnabled'in document,'Vídeo flotante'],['Pantalla completa','fullscreenEnabled'in document,'Modo pantalla completa'],['Media Session','mediaSession'in navigator,'Controles del sistema'],['Service Worker','serviceWorker'in navigator,'Instalación y caché']];$('#compatList').innerHTML=features.map(([name,ok,desc])=>`<div class="compat-row"><span class="compat-dot ${ok?'ok':'warn'}"></span><strong>${name}</strong><span>${ok?'Disponible':'No disponible'} · ${desc}</span></div>`).join('');}
 function registerPWA(){
   if('serviceWorker'in navigator&&location.protocol!=='file:'){
@@ -1099,7 +1423,7 @@ function escapeHtml(v){return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'
 function escapeAttr(v){return escapeHtml(v).replace(/'/g,'&#39;');}
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function friendlyMediaError(err){return err?.name==='NotAllowedError'?'El navegador requiere una interacción antes de reproducir.':err?.message||'Formato o códec no compatible.';}
-function friendlyFfmpegError(err){const m=err?.message||String(err);if(/memory|abort|out of bounds/i.test(m))return'El dispositivo se ha quedado sin memoria para esta operación. Prueba un archivo menor.';if(/fetch|load|network/i.test(m))return'No se pudo cargar el núcleo local. Ejecuta la app mediante HTTPS o un servidor local.';return m;}
+function friendlyFfmpegError(err){const m=err?.message||String(err);if(/memory|abort|out of bounds/i.test(m))return'El dispositivo se ha quedado sin memoria para esta operación. Prueba un archivo menor.';if(/fetch|load|network/i.test(m))return'No se pudo descargar el núcleo FFmpeg. Comprueba Internet y ejecuta la app mediante HTTPS o un servidor local.';return m;}
 function toast(title,message,type='info'){const root=$('#toastStack');const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<span class="toast-dot"></span><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(message)}</p></div>`;root.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),250);},4200);}
 
 init();

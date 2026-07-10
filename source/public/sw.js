@@ -1,6 +1,6 @@
-const VERSION='4.0.0';
+const VERSION='4.1.0';
 const SHELL_CACHE=`mediaforge-404-shell-v${VERSION}`;
-const RUNTIME_CACHE='mediaforge-404-runtime-v4';
+const RUNTIME_CACHE='mediaforge-404-runtime-v4.1';
 const SHELL=['./']; // __PRECACHE__
 
 self.addEventListener('install',event=>{
@@ -28,11 +28,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith(networkFirst(request,'./'));
     return;
   }
-  if(url.pathname.includes('/vendor/ffmpeg/')){
-    event.respondWith(cacheFirst(request,RUNTIME_CACHE));
-    return;
-  }
-  if(/\.(?:js|css|png|svg|webmanifest)$/i.test(url.pathname)){
+  if(/\.(?:js|css|png|svg|webmanifest|html|py|bat|md)$/i.test(url.pathname)){
     event.respondWith(staleWhileRevalidate(request,SHELL_CACHE));
     return;
   }

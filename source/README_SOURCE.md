@@ -1,42 +1,39 @@
-# Código fuente de MediaForge 404
+# Código fuente — MediaForge 404 v4.1.0
 
 ## Requisitos
 
-- Node.js 20 o superior.
-- npm.
-- Chromium instalado por Playwright para ejecutar las pruebas.
-
-## Instalación
-
-```bash
-npm ci
-npx playwright install chromium
-```
+- Node.js 20+
+- npm
+- Python 3 solo para Cast Bridge
 
 ## Desarrollo
 
 ```bash
+npm ci
 npm run dev
 ```
 
-## Build
+## Build Web Light
 
 ```bash
 npm run build
 ```
 
-El proceso `prebuild` ejecuta `scripts/prepare-vendor.mjs`, copia el núcleo ESM desde `@ffmpeg/core` a `public/vendor/ffmpeg`, construye `dist/` con Vite y finaliza el service worker con los nombres versionados reales.
+El build no copia `ffmpeg-core.wasm`. FFmpeg Core se carga bajo demanda desde unpkg para que ningún archivo supere el límite de 25 MB del cargador web de GitHub.
+
+Google Cast se carga bajo demanda desde el SDK oficial de Google. El código de producción usa el receptor multimedia predeterminado.
 
 ## Pruebas
 
 ```bash
+npx playwright install chromium
 npm test
 ```
 
-Para usar un Chromium del sistema en un entorno CI:
+Prueba aislada sin servidor local:
 
 ```bash
-PLAYWRIGHT_CHROMIUM_PATH=/ruta/a/chromium npm test
+npm run test:smoke
 ```
 
-Los informes de Playwright se generan en `playwright-report/` y no se incluyen en el paquete final.
+El smoke test valida inicio, navegación, Cast simulado y viewport móvil mediante la build compilada.

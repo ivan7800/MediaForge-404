@@ -1,13 +1,11 @@
-# MediaForge 404 v4.0.2 Web Light
+# MediaForge 404 v4.1.0 Cast Edition — Web Light
 
-Esta edición está preparada para el cargador web de GitHub. Se han eliminado las dos copias locales de `ffmpeg-core.wasm` (aprox. 32 MB cada una), que superaban el límite de 25 MB por archivo.
+Preparada para `Add file → Upload files` de GitHub:
 
-## Qué se conserva
+- Ningún archivo supera 25 MB.
+- FFmpeg se descarga bajo demanda.
+- Google Cast carga el SDK oficial bajo demanda.
+- El procesamiento multimedia continúa realizándose en el dispositivo.
+- Incluye Cast Bridge para servir un único archivo local dentro de la red doméstica.
 
-- Reproductor, biblioteca, Audio Lab, skins, modos TV y pantalla completa corregida.
-- Conversión, reparación y análisis profundo.
-- PWA y GitHub Pages.
-
-## Diferencia
-
-FFmpeg se descarga desde unpkg únicamente al abrir una función que lo necesita. Los archivos multimedia no se suben: el procesamiento continúa dentro del navegador. La primera conversión requiere conexión a Internet.
+Sube el contenido interior de esta carpeta, no el ZIP.
